@@ -15,6 +15,7 @@ namespace MLModSettings;
 [ResonitePlugin(PluginMetadata.GUID, PluginMetadata.NAME, PluginMetadata.VERSION, PluginMetadata.AUTHORS, PluginMetadata.REPOSITORY_URL)]
 [BepInDependency(BepInExResoniteShim.PluginMetadata.GUID, BepInDependency.DependencyFlags.HardDependency)]
 [BepInDependency(BepisModSettings.PluginMetadata.GUID, BepInDependency.DependencyFlags.HardDependency)]
+[BepInDependency("Nytra.MonkeyLoaderLoader", BepInDependency.DependencyFlags.HardDependency)]
 [BepInDependency("NepuShiro.RMLModSettings", BepInDependency.DependencyFlags.SoftDependency)]
 public class Plugin : BasePlugin
 {
@@ -63,11 +64,13 @@ public class Plugin : BasePlugin
         public static void HideMlSettingsCategory(FeedItemInterface __instance)
         {
             SetDataFeedCategory setDfc = __instance.Slot.GetComponent<SetDataFeedCategory>();
-            if (setDfc == null) return;
-            if (setDfc.CategoryPath.Contains("MonkeyLoader"))
+            setDfc?.RunSynchronously(() =>
             {
-                __instance.Slot.ActiveSelf = false;
-            }
+                if (setDfc.CategoryPath.Contains("MonkeyLoader"))
+                {
+                    __instance.Slot.ActiveSelf = false;
+                }
+            });
         }
 
         public static void LogMlPath(EnumerateDataFeedParameters<SettingsDataFeed> parameters)
@@ -84,7 +87,10 @@ public class Plugin : BasePlugin
 
             if (path[1] == "MonkeyLoaderMLSettings")
             {
-                DataFeedHelpers.GoToSettingPath(["MonkeyLoader"]);
+                Userspace.UserspaceWorld.RunInUpdates(1, () =>
+                {
+                    DataFeedHelpers.GoToSettingPath(["MonkeyLoader"]);
+                });
             }
 
             yield break;

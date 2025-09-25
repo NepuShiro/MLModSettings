@@ -1,7 +1,7 @@
 # MLModSettings
 [![Thunderstore Badge](https://modding.resonite.net/assets/available-on-thunderstore.svg)](https://thunderstore.io/c/resonite/)
 
-A [Resonite](https://resonite.com/) mod that lets you edit your MonkeyLoader Mod Settings in the settings tab of your dash.
+A [Resonite](https://resonite.com/) mod that lets you edit your MonkeyLoader mod settings in the BepisModSettings tab of the dashboard.
 
 ## Installation (Manual)
 1. Install [BepisLoader](https://github.com/ResoniteModding/BepisLoader) for Resonite.
