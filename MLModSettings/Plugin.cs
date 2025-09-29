@@ -27,20 +27,27 @@ public class Plugin : BasePlugin
 
         ResoniteHooks.OnEngineReady += () =>
         {
-            BepisSettingsPage.CustomPluginsPages += PatchClass.CreateMlCategory;
-            BepisPluginPage.CustomPluginConfigsPages += PatchClass.GotoMonkeyLoader;
+            if (AppDomain.CurrentDomain.GetAssemblies().Any(assembly => assembly.GetName().Name?.Contains("MonkeyLoader") == true))
+            {
+                BepisPluginsPage.CustomPluginsPages += PatchClass.CreateMlCategory;
+                BepisConfigsPage.CustomPluginConfigsPages += PatchClass.GotoMlCategory;
 
-            HarmonyInstance.Patch(
-                AccessTools.Method(typeof(FeedItemInterface), nameof(FeedItemInterface.Set), new Type[] { typeof(IDataFeedView), typeof(DataFeedItem) }),
-                postfix: new HarmonyMethod(typeof(PatchClass), nameof(PatchClass.HideMlSettingsCategory))
-            );
+                HarmonyInstance.Patch(
+                    AccessTools.Method(typeof(FeedItemInterface), nameof(FeedItemInterface.Set), new Type[] { typeof(IDataFeedView), typeof(DataFeedItem) }),
+                    postfix: new HarmonyMethod(typeof(PatchClass), nameof(PatchClass.HideMlSettingsCategory))
+                );
 
-            HarmonyInstance.Patch(
-                AccessTools.Method(typeof(MonkeyLoaderRootCategorySettingsItems), nameof(MonkeyLoaderRootCategorySettingsItems.Apply)),
-                prefix: new HarmonyMethod(typeof(PatchClass), nameof(PatchClass.LogMlPath))
-            );
-            
-            Log.LogInfo($"Plugin {PluginMetadata.GUID} is fully loaded!");
+                HarmonyInstance.Patch(
+                    AccessTools.Method(typeof(MonkeyLoaderRootCategorySettingsItems), nameof(MonkeyLoaderRootCategorySettingsItems.Apply)),
+                    prefix: new HarmonyMethod(typeof(PatchClass), nameof(PatchClass.LogMlPath))
+                );
+
+                Log.LogInfo($"Plugin {PluginMetadata.GUID} is fully loaded!");
+            }
+            else
+            {
+                Log.LogFatal("MonkeyLoader is not loaded! You cannot use this plugin without it.");
+            }
         };
 
         Log.LogInfo($"Plugin {PluginMetadata.GUID} is partially loaded!");
@@ -61,16 +68,22 @@ public class Plugin : BasePlugin
             yield return mlSettingsCategory;
         }
 
+        public static async IAsyncEnumerable<DataFeedItem> GotoMlCategory(IReadOnlyList<string> path)
+        {
+            await Task.CompletedTask;
+            
+            if (path[1] == "MonkeyLoaderMLSettings") DataFeedHelpers.GoToSettingPath("MonkeyLoader");
+
+            yield break;
+        }
+
         public static void HideMlSettingsCategory(FeedItemInterface __instance)
         {
             SetDataFeedCategory setDfc = __instance.Slot.GetComponent<SetDataFeedCategory>();
-            setDfc?.RunSynchronously(() =>
+            if (setDfc?.CategoryPath?.Contains("MonkeyLoader") == true)
             {
-                if (setDfc.CategoryPath.Contains("MonkeyLoader"))
-                {
-                    __instance.Slot.ActiveSelf = false;
-                }
-            });
+                setDfc.RunSynchronously(() => __instance.Slot.ActiveSelf = false);
+            }
         }
 
         public static void LogMlPath(EnumerateDataFeedParameters<SettingsDataFeed> parameters)
@@ -79,21 +92,6 @@ public class Plugin : BasePlugin
             {
                 Log.LogDebug($"Current Path: {string.Join(" -> ", parameters.Path)}");
             }
-        }
-
-        public static async IAsyncEnumerable<DataFeedItem> GotoMonkeyLoader(IReadOnlyList<string> path)
-        {
-            await Task.CompletedTask;
-
-            if (path[1] == "MonkeyLoaderMLSettings")
-            {
-                Userspace.UserspaceWorld.RunInUpdates(1, () =>
-                {
-                    DataFeedHelpers.GoToSettingPath(["MonkeyLoader"]);
-                });
-            }
-
-            yield break;
         }
     }
 }
